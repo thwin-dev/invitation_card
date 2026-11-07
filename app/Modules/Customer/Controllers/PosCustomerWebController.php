@@ -4,34 +4,64 @@ namespace App\Modules\Customer\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Customer\Models\PosCustomer;
-use App\Modules\Sale\Models\Sale;
-use App\Modules\Customer\Models\CustomerCreditRecord;
-use App\Modules\Customer\Models\CustomerPayment;
+use App\Modules\Customer\Services\CustomerExcelService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PosCustomerWebController extends Controller
 {
     public function index(Request $request): View
     {
-        $customers = PosCustomer::query()->when($request->string('search')->trim()->value(), fn ($query, string $search) => $query->where(fn ($query) => $query->where('name', 'like', "%{$search}%")->orWhere('phone', 'like', "%{$search}%")))->orderBy('name')->paginate(15)->withQueryString();
+        $customers = PosCustomer::query()
+            ->when($request->string('search')->trim()->value(), fn ($query, string $search) =>
+                $query->where(fn ($query) =>
+                    $query->where('name', 'like', "%{$search}%")
+                        ->orWhere('phone', 'like', "%{$search}%")
+                        ->orWhere('address', 'like', "%{$search}%")
+                )
+            )
+            ->orderBy('name')
+            ->paginate(15)
+            ->withQueryString();
+
         $editCustomer = $request->filled('edit') ? PosCustomer::query()->find($request->integer('edit')) : null;
+
         return view('management.customers.index', compact('customers', 'editCustomer'));
+    }
+
+    public function sampleExcel(CustomerExcelService $service): StreamedResponse
+    {
+        return $service->downloadSample();
+    }
+
+    public function import(Request $request, CustomerExcelService $service): RedirectResponse
+    {
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:xlsx,xls,csv', 'max:10240'],
+        ]);
+
+        $result = $service->import($request->file('file'), $request->user()->id);
+
+        $msg = "Imported {$result['imported']} exhibitor(s).";
+        if ($result['skipped'] > 0) {
+            $msg .= " Skipped {$result['skipped']} invalid row(s).";
+        }
+
+        $redirectRoute = $request->routeIs('management.customers.*') ? 'management.customers.index' : 'management.exhibitors.index';
+        return to_route($redirectRoute)->with('status', $msg);
     }
 
     public function show(PosCustomer $customer): View
     {
-        $canViewSales = request()->user('web')?->hasPermissionTo('sales', 'view') ?? false;
-        $sales = $canViewSales
-            ? Sale::query()->where('customer_id', $customer->id)->latest('sale_date')->limit(20)->get()
-            : collect();
-        $credits = CustomerCreditRecord::query()->with('sale')->where('customer_id', $customer->id)->latest()->get();
-        $creditTotal = (float) $credits->whereNull('repayment_date')->sum('amount');
-        $creditLimit = (float) $customer->credit_limit;
-        $availableCredit = $customer->availableCredit();
-        $payments = CustomerPayment::query()->with('credit')->where('customer_id', $customer->id)->latest('payment_date')->get();
-        return view('management.customers.show', compact('customer', 'sales', 'credits', 'creditTotal', 'creditLimit', 'availableCredit', 'payments', 'canViewSales'));
+        return view('management.customers.show', compact('customer'));
+    }
+
+    public function invitationCard(PosCustomer $customer): View
+    {
+        return view('management.customers.invitation-card', compact('customer'));
     }
 
     public function store(Request $request): RedirectResponse
@@ -40,14 +70,24 @@ class PosCustomerWebController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string'],
-            'allow_credit' => ['sometimes', 'boolean'],
-            'credit_limit' => ['nullable', 'numeric', 'min:0'],
             'customer_level' => ['required', 'integer', 'in:1,2,3'],
+            'logo' => ['nullable', 'image', 'max:5120'],
+            'qr_code' => ['nullable', 'image', 'max:5120'],
         ]);
-        $data['allow_credit'] = $request->boolean('allow_credit');
-        $data['credit_limit'] = $data['allow_credit'] ? (float) ($data['credit_limit'] ?? 0) : 0;
+
+        if ($request->hasFile('logo')) {
+            $data['logo_path'] = $request->file('logo')->store('customers/logos', 'public');
+        }
+        if ($request->hasFile('qr_code')) {
+            $data['qr_code_path'] = $request->file('qr_code')->store('customers/qr_codes', 'public');
+        }
+
+        unset($data['logo'], $data['qr_code']);
+
         PosCustomer::query()->create([...$data, 'created_by' => $request->user()->id]);
-        return to_route('management.customers.index')->with('status', 'Customer created.');
+
+        $redirectRoute = $request->routeIs('management.customers.*') ? 'management.customers.index' : 'management.exhibitors.index';
+        return to_route($redirectRoute)->with('status', 'Exhibitor created.');
     }
 
     public function update(Request $request, PosCustomer $customer): RedirectResponse
@@ -56,59 +96,52 @@ class PosCustomerWebController extends Controller
             'name' => ['required', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string'],
-            'allow_credit' => ['sometimes', 'boolean'],
-            'credit_limit' => ['nullable', 'numeric', 'min:0'],
             'customer_level' => ['required', 'integer', 'in:1,2,3'],
+            'logo' => ['nullable', 'image', 'max:5120'],
+            'qr_code' => ['nullable', 'image', 'max:5120'],
         ]);
-        $data['allow_credit'] = $request->boolean('allow_credit');
-        $data['credit_limit'] = $data['allow_credit'] ? (float) ($data['credit_limit'] ?? 0) : 0;
+
+        if ($request->hasFile('logo')) {
+            if ($customer->logo_path && Storage::disk('public')->exists($customer->logo_path)) {
+                Storage::disk('public')->delete($customer->logo_path);
+            }
+            $data['logo_path'] = $request->file('logo')->store('customers/logos', 'public');
+        }
+
+        if ($request->hasFile('qr_code')) {
+            if ($customer->qr_code_path && Storage::disk('public')->exists($customer->qr_code_path)) {
+                Storage::disk('public')->delete($customer->qr_code_path);
+            }
+            $data['qr_code_path'] = $request->file('qr_code')->store('customers/qr_codes', 'public');
+        }
+
+        unset($data['logo'], $data['qr_code']);
+
         $customer->update($data);
-        return to_route('management.customers.index')->with('status', 'Customer updated.');
+
+        $redirectRoute = $request->routeIs('management.customers.*') ? 'management.customers.index' : 'management.exhibitors.index';
+        return to_route($redirectRoute)->with('status', 'Exhibitor updated.');
     }
 
     public function updateLevel(Request $request, PosCustomer $customer): RedirectResponse
     {
         $customer->update($request->validate(['customer_level' => ['required', 'integer', 'in:1,2,3']]));
-        return back()->with('status', 'Customer level updated.');
+
+        return back()->with('status', 'Exhibitor level updated.');
     }
 
-    public function repayCredit(Request $request, CustomerCreditRecord $credit): RedirectResponse
+    public function destroy(PosCustomer $customer): RedirectResponse
     {
-        $data = $request->validate(['repayment_date' => ['required', 'date']]);
-        $credit->update(['repayment_date' => $data['repayment_date']]);
-        return back()->with('status', 'Credit repayment recorded.');
-    }
-
-    public function storePayment(Request $request, PosCustomer $customer): RedirectResponse
-    {
-        $data = $request->validate(['credit_record_id' => ['nullable', 'exists:customer_credit_records,id'], 'amount' => ['required', 'numeric', 'gt:0'], 'payment_date' => ['required', 'date'], 'payment_method' => ['required', 'in:cash,bank,mobile'], 'note' => ['nullable', 'string', 'max:255']]);
-        $credit = ! empty($data['credit_record_id']) ? CustomerCreditRecord::query()->where('customer_id', $customer->id)->whereNull('repayment_date')->findOrFail($data['credit_record_id']) : null;
-        if ($credit && (float) $data['amount'] > (float) $credit->amount) {
-            return back()->withErrors(['amount' => 'Payment cannot be greater than the selected credit balance.'])->withInput();
+        if ($customer->logo_path && Storage::disk('public')->exists($customer->logo_path)) {
+            Storage::disk('public')->delete($customer->logo_path);
         }
-        $payment = CustomerPayment::query()->create([...$data, 'customer_id' => $customer->id, 'received_by' => $request->user()->id]);
-        if ($credit) {
-            $remaining = (float) $credit->amount - (float) $data['amount'];
-            $credit->update(['amount' => $remaining, 'repayment_date' => $remaining <= 0 ? $data['payment_date'] : null]);
-            if ($credit->sale) $credit->sale->update(['credit_amount' => $remaining, 'paid_amount' => (float) $credit->sale->total_price - $remaining, 'repayment_date' => $remaining <= 0 ? $data['payment_date'] : null]);
+        if ($customer->qr_code_path && Storage::disk('public')->exists($customer->qr_code_path)) {
+            Storage::disk('public')->delete($customer->qr_code_path);
         }
-        return to_route('management.customer-payments.receipt', [$customer, $payment])->with('status', 'Customer payment recorded.');
-    }
 
-    public function paymentReceipt(PosCustomer $customer, CustomerPayment $payment): View
-    {
-        abort_unless($payment->customer_id === $customer->id, 404);
-        return view('management.customers.payment-receipt', compact('customer', 'payment'));
-    }
+        $customer->delete();
 
-    public function statement(Request $request, PosCustomer $customer): View
-    {
-        $from = $request->date('from')?->startOfDay(); $to = $request->date('to')?->endOfDay();
-        $sales = Sale::query()->where('customer_id', $customer->id)->when($from, fn ($q) => $q->whereDate('sale_date', '>=', $from))->when($to, fn ($q) => $q->whereDate('sale_date', '<=', $to))->latest('sale_date')->get();
-        $payments = CustomerPayment::query()->where('customer_id', $customer->id)->when($from, fn ($q) => $q->whereDate('payment_date', '>=', $from))->when($to, fn ($q) => $q->whereDate('payment_date', '<=', $to))->latest('payment_date')->get();
-        $creditTotal = (float) $sales->where('status', 'completed')->sum('credit_amount'); $paymentTotal = (float) $payments->sum('amount'); $remaining = max(0, $creditTotal - $paymentTotal);
-        return view('management.customers.statement', compact('customer', 'sales', 'payments', 'creditTotal', 'paymentTotal', 'remaining'));
+        $redirectRoute = request()->routeIs('management.customers.*') ? 'management.customers.index' : 'management.exhibitors.index';
+        return to_route($redirectRoute)->with('status', 'Exhibitor deleted.');
     }
-
-    public function destroy(PosCustomer $customer): RedirectResponse { $customer->delete(); return to_route('management.customers.index')->with('status', 'Customer deleted.'); }
 }

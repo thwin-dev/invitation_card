@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
-use App\Support\ActivityLogger;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -12,7 +11,10 @@ use Illuminate\View\View;
 
 class PosWebAuthController extends Controller
 {
-    public function showLogin(): View { return view('auth.admin-login'); }
+    public function showLogin(): View
+    {
+        return view('auth.admin-login');
+    }
 
     public function login(Request $request): RedirectResponse
     {
@@ -21,45 +23,28 @@ class PosWebAuthController extends Controller
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
         ]);
+
         $user = User::query()->where('user_code', $data['user_code'])->where('email', $data['email'])->first();
+
         if (! $user || $user->prohibition_flag || ! Hash::check($data['password'], $user->password)) {
             return back()
                 ->withInput($request->except('password'))
                 ->withErrors(['credentials' => 'The provided credentials are incorrect.']);
         }
+
         Auth::guard('web')->login($user, true);
         $request->session()->regenerate();
         $user->update(['last_login_at' => now()]);
-        ActivityLogger::record('users', 'login', 'Signed in', $user);
 
-        foreach ([
-            'management.dashboard' => ['dashboard', 'view'],
-            'management.sales.create' => ['sales', 'create'],
-            'management.stock.index' => ['inventory', 'view'],
-            'management.products.index' => ['products', 'view'],
-            'management.customers.index' => ['customers', 'view'],
-            'management.purchases.index' => ['purchases', 'view'],
-            'management.orders.index' => ['orders', 'view'],
-            'management.users.index' => ['users', 'view'],
-            'management.security.roles.index' => ['roles', 'view'],
-            'management.activity-logs.index' => ['activity-logs', 'view'],
-            'management.expenses.index' => ['expenses', 'view'],
-            'management.reports.financial' => ['reports', 'view'],
-        ] as $route => [$module, $action]) {
-            if ($user->hasPermissionTo($module, $action)) {
-                return to_route($route);
-            }
-        }
-
-        return to_route('management.password.edit');
+        return to_route('management.customers.index');
     }
 
     public function logout(Request $request): RedirectResponse
     {
-        ActivityLogger::record('users', 'logout', 'Signed out', $request->user('web'));
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return to_route('login');
     }
 
@@ -80,7 +65,7 @@ class PosWebAuthController extends Controller
         }
 
         $request->user()->update(['password' => $data['password']]);
-        ActivityLogger::record('users', 'password_changed', 'Changed account password', $request->user());
+
         return back()->with('status', 'Password updated successfully.');
     }
 }

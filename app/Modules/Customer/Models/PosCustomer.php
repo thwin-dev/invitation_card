@@ -4,43 +4,40 @@ namespace App\Modules\Customer\Models;
 
 use App\Models\User;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Storage;
 
-#[Fillable(['name', 'phone', 'address', 'allow_credit', 'credit_limit', 'customer_level', 'created_by'])]
+#[Fillable(['name', 'phone', 'address', 'customer_level', 'logo_path', 'qr_code_path', 'created_by'])]
 class PosCustomer extends Model
 {
     use SoftDeletes;
 
-    public function creator(): BelongsTo { return $this->belongsTo(User::class, 'created_by'); }
-    public function credits(): HasMany { return $this->hasMany(CustomerCreditRecord::class, 'customer_id'); }
-    public function payments(): HasMany { return $this->hasMany(CustomerPayment::class, 'customer_id'); }
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
 
     protected function casts(): array
     {
         return [
-            'allow_credit' => 'boolean',
-            'credit_limit' => 'decimal:2',
             'customer_level' => 'integer',
         ];
     }
 
-    public function outstandingDebt(): float
+    protected function logoUrl(): Attribute
     {
-        return (float) $this->credits()->whereNull('repayment_date')->sum('amount');
+        return Attribute::get(fn (): ?string =>
+            $this->logo_path ? Storage::url($this->logo_path) : null
+        );
     }
 
-    public function availableCredit(): float
+    protected function qrCodeUrl(): Attribute
     {
-        if (! $this->allow_credit) {
-            return 0.0;
-        }
-        $limit = (float) $this->credit_limit;
-        if ($limit <= 0) {
-            return 999999999.0;
-        }
-        return max(0.0, $limit - $this->outstandingDebt());
+        return Attribute::get(fn (): ?string =>
+            $this->qr_code_path ? Storage::url($this->qr_code_path) : null
+        );
     }
 }

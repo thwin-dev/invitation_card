@@ -1,5 +1,0 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Barcode — {{ $unit->name }}</title><style>body{font-family:system-ui;text-align:center;padding:30px}svg{width:320px;max-width:100%;height:auto}@media print{button{display:none}}</style></head><body><h1>{{ $unit->product->name }} / {{ $unit->name }}</h1><p>{{ $unit->size }} {{ $unit->color }}</p>
-@if($bars)
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 117 80" role="img" aria-label="Barcode {{ $unit->original_code }}"><rect width="117" height="80" fill="white"/>@foreach(str_split($bars) as $x => $bit)@if($bit === '1')<rect x="{{ $x + 11 }}" y="4" width="1" height="{{ $x < 3 || ($x >= 45 && $x < 50) || $x >= 92 ? 62 : 58 }}" fill="black"/>@endif@endforeach<text x="58.5" y="76" text-anchor="middle" font-family="monospace" font-size="9">{{ $unit->original_code }}</text></svg>
-@else<p>This unit needs a valid EAN-13 barcode. Generate one in the unit editor.</p>@endif
-<p>SKU: {{ $unit->code }}</p><button type="button" onclick="window.print()">Print label</button></body></html>

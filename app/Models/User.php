@@ -2,14 +2,11 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Modules\Course\Models\CourseWishlist;
+use App\Support\PermissionCatalog;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -36,44 +33,12 @@ class User extends Authenticatable
         ];
     }
 
-    /**
-     * @return HasMany<CourseWishlist, $this>
-     */
-    public function courseWishlists(): HasMany
-    {
-        return $this->hasMany(CourseWishlist::class);
-    }
-
-    public function roleRecord(): BelongsTo
-    {
-        return $this->belongsTo(Role::class, 'role_id');
-    }
-
     public function hasPermissionTo(string $module, string $action): bool
     {
-        if (! \App\Support\PermissionCatalog::contains($module, $action)) {
+        if ($this->prohibition_flag) {
             return false;
         }
 
-        if ($this->role_id === null) {
-            // Keep legacy Owner accounts usable until the permission seeder assigns their role_id.
-            return strtolower(trim((string) $this->role)) === 'owner';
-        }
-
-        $this->loadMissing('roleRecord.permissions');
-
-        return $this->roleRecord?->permissions->contains(fn (Permission $permission): bool =>
-            $permission->module === $module && $permission->action === $action
-        ) ?? false;
+        return PermissionCatalog::contains($module, $action);
     }
-
-    public static function hasOtherActiveAdmin(int $exceptUserId): bool
-    {
-        return static::query()
-            ->where('role_id', Role::query()->where('slug', 'admin')->value('id'))
-            ->where('id', '!=', $exceptUserId)
-            ->where('prohibition_flag', false)
-            ->exists();
-    }
-
 }

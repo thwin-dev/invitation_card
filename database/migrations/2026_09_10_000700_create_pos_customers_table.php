@@ -12,8 +12,9 @@ return new class extends Migration {
             $table->string('name');
             $table->string('phone')->nullable();
             $table->text('address')->nullable();
-            $table->boolean('allow_credit')->default(false);
             $table->unsignedInteger('customer_level')->default(1);
+            $table->string('logo_path')->nullable();
+            $table->string('qr_code_path')->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->softDeletes();
             $table->timestamps();
@@ -21,5 +22,8 @@ return new class extends Migration {
         });
     }
 
-    public function down(): void { Schema::dropIfExists('pos_customers'); }
+    public function down(): void
+    {
+        Schema::dropIfExists('pos_customers');
+    }
 };
