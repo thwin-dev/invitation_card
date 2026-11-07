@@ -103,6 +103,7 @@
                 <div class="mt-2 mb-1 flex flex-col items-center justify-center">
                     <img src="{{ $event->logo_url }}" 
                          alt="{{ $event->title }} - {{ $event->subtitle }}" 
+                         crossorigin="anonymous"
                          class="h-20 sm:h-24 w-auto max-w-[300px] sm:max-w-[340px] object-contain drop-shadow-[0_4px_18px_rgba(255,255,255,0.22)]">
                     <p class="mt-1 font-cinzel text-xs sm:text-sm font-semibold tracking-[0.3em] text-white/95 uppercase">
                         {{ $event->edition }}
@@ -142,7 +143,7 @@
                 @if($customer->logo_url)
                     <div class="mt-3.5 mb-1 flex items-center justify-center">
                         <div class="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl border border-amber-300/40 bg-slate-950/70 p-2 shadow-lg backdrop-blur flex items-center justify-center">
-                            <img src="{{ $customer->logo_url }}" alt="{{ $customer->name }}" class="h-full w-full object-contain rounded-xl">
+                            <img src="{{ $customer->logo_url }}" alt="{{ $customer->name }}" crossorigin="anonymous" class="h-full w-full object-contain rounded-xl">
                         </div>
                     </div>
                 @endif
@@ -168,7 +169,7 @@
                 <div class="flex flex-col items-center">
                     <div class="relative rounded-xl border-2 border-amber-300/60 bg-white p-2 sm:p-2.5 shadow-[0_4px_20px_rgba(245,158,11,0.2)]">
                         @if($customer->qr_code_url)
-                            <img src="{{ $customer->qr_code_url }}" alt="Invitation QR Code" class="h-24 w-24 sm:h-28 sm:w-28 object-contain rounded-md">
+                            <img src="{{ $customer->qr_code_url }}" alt="Invitation QR Code" crossorigin="anonymous" class="h-24 w-24 sm:h-28 sm:w-28 object-contain rounded-md">
                         @else
                             {{-- Clean Fallback QR Graphic --}}
                             <svg class="h-24 w-24 sm:h-28 sm:w-28 text-slate-900" viewBox="0 0 100 100" fill="currentColor">
@@ -231,10 +232,52 @@
         </article>
     </div>
 
+    {{-- Download Button (Hidden in Print & Export) --}}
+    <div class="no-print my-6 flex items-center justify-center">
+        <button id="downloadBtn" type="button" onclick="downloadInvitationCard()" class="inline-flex items-center gap-2.5 rounded-full border border-amber-300/60 bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-6 py-2.5 text-xs font-bold uppercase tracking-wider text-slate-950 shadow-[0_4px_25px_rgba(245,158,11,0.35)] transition-all duration-300 hover:scale-105 active:scale-95 cursor-pointer">
+            <svg class="h-4 w-4 text-slate-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span id="downloadBtnText">Download Card (PNG)</span>
+        </button>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             window.lucide?.createIcons();
         });
+    </script>
+    <script type="module">
+        import { domToPng } from 'https://cdn.jsdelivr.net/npm/modern-screenshot@4.4.39/+esm';
+
+        window.downloadInvitationCard = async function() {
+            var card = document.querySelector('.invitation-card');
+            if (!card) return;
+
+            var btn = document.getElementById('downloadBtn');
+            var btnText = document.getElementById('downloadBtnText');
+            var originalText = btnText ? btnText.innerText : 'Download Card (PNG)';
+            if (btnText) btnText.innerText = 'Generating Card...';
+            if (btn) btn.disabled = true;
+
+            try {
+                var dataUrl = await domToPng(card, {
+                    scale: 2,
+                    backgroundColor: '#051532',
+                    quality: 1,
+                });
+                var link = document.createElement('a');
+                link.download = '{{ $customer->slug }}-invitation-card.png';
+                link.href = dataUrl;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch(err) {
+                console.error('Download card error:', err);
+                alert('Failed to generate card image: ' + err.message);
+            } finally {
+                if (btnText) btnText.innerText = originalText;
+                if (btn) btn.disabled = false;
+            }
+        };
     </script>
 </body>
 </html>

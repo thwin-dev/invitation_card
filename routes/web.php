@@ -19,8 +19,8 @@ Route::get('login', [PosWebAuthController::class, 'showLogin'])->name('login');
 Route::post('login', [PosWebAuthController::class, 'login'])->name('login.submit');
 Route::post('logout', [PosWebAuthController::class, 'logout'])->middleware('auth:web')->name('logout');
 
-// Public invitation card link
-Route::get('invitation/{customer}', [App\Modules\Customer\Controllers\PosCustomerWebController::class, 'invitationCard'])->name('invitation.card');
+// Public invitation card link (strictly requires matching user ID and username slug)
+Route::get('invitation/{customer}/{slug}', [App\Modules\Customer\Controllers\PosCustomerWebController::class, 'invitationCard'])->name('invitation.card');
 
 Route::middleware('auth:web')->group(function (): void {
     Route::get('change-password', [PosWebAuthController::class, 'showChangePassword'])->name('management.password.edit');

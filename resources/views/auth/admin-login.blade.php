@@ -29,13 +29,8 @@
             <form method="post" action="{{ route('login.submit') }}" class="mt-8 space-y-5">
                 @csrf
                 <label class="block text-sm font-medium text-gray-700">
-                    User code
-                    <input name="user_code" value="{{ old('user_code') }}" required autofocus placeholder="ADMIN-001" class="mt-2 w-full rounded-lg border border-gray-300 px-3.5 py-3 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100">
-                </label>
-
-                <label class="block text-sm font-medium text-gray-700">
                     Email
-                    <input type="email" name="email" value="{{ old('email') }}" required placeholder="admin@example.com" class="mt-2 w-full rounded-lg border border-gray-300 px-3.5 py-3 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100">
+                    <input type="email" name="email" value="{{ old('email') }}" required autofocus placeholder="admin@example.com" class="mt-2 w-full rounded-lg border border-gray-300 px-3.5 py-3 outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100">
                 </label>
 
                 <label class="block text-sm font-medium text-gray-700">

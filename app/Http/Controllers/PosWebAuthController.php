@@ -19,12 +19,11 @@ class PosWebAuthController extends Controller
     public function login(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'user_code' => ['required', 'string'],
             'email' => ['required', 'email'],
             'password' => ['required', 'string'],
         ]);
 
-        $user = User::query()->where('user_code', $data['user_code'])->where('email', $data['email'])->first();
+        $user = User::query()->where('email', $data['email'])->first();
 
         if (! $user || $user->prohibition_flag || ! Hash::check($data['password'], $user->password)) {
             return back()

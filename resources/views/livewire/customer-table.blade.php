@@ -74,28 +74,35 @@
 
                             {{-- Links Column with Link and Copy Button --}}
                             <td class="px-5 py-3.5 whitespace-nowrap">
-                                <div x-data="{ copied: false }" class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50/80 px-2.5 py-1 text-xs text-gray-600">
-                                    <a href="{{ route('invitation.card', $customer) }}" target="_blank" class="font-mono text-xs font-medium text-[#465fff] hover:text-[#3649db] hover:underline flex items-center gap-1" title="Open invitation card in new tab">
-                                        <span>/invitation/{{ $customer->id }}</span>
-                                        <i data-lucide="external-link" class="h-3 w-3 text-gray-400"></i>
+                                <div x-data="{ copied: false }" class="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-gray-50/90 px-3 py-1.5 text-xs">
+                                    <a href="{{ $customer->invitation_url }}" target="_blank" class="font-mono text-xs font-semibold text-[#465fff] hover:text-[#3649db] hover:underline inline-flex items-center gap-1" title="Open invitation card in new tab">
+                                        <span>/invitation/{{ $customer->id }}/{{ $customer->slug }}</span>
+                                        <svg class="h-3 w-3 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
                                     </a>
                                     <button type="button" 
-                                            @click="navigator.clipboard.writeText('{{ route('invitation.card', $customer) }}'); copied = true; setTimeout(() => copied = false, 2000); window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Invitation link copied for {{ addslashes($customer->name) }}' } }))"
-                                            class="ml-1 inline-flex items-center gap-1 rounded-md p-1 transition"
-                                            :class="copied ? 'bg-emerald-50 text-emerald-600' : 'text-gray-400 hover:bg-white hover:text-gray-700 shadow-2xs'"
-                                            :title="copied ? 'Copied to clipboard!' : 'Copy invitation link'">
-                                        <i x-show="!copied" data-lucide="copy" class="h-3.5 w-3.5"></i>
-                                        <i x-show="copied" x-cloak data-lucide="check" class="h-3.5 w-3.5 text-emerald-600"></i>
-                                        <span x-show="copied" x-cloak class="text-[10px] font-semibold text-emerald-600">Copied</span>
+                                            @click="window.copyToClipboard('{{ $customer->invitation_url }}').then(() => { copied = true; setTimeout(() => copied = false, 2000); window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Invitation link copied for {{ addslashes($customer->name) }}' } })); }).catch(() => { prompt('Copy invitation link:', '{{ $customer->invitation_url }}'); })"
+                                            class="inline-flex items-center gap-1 rounded-lg px-2 py-0.5 font-medium transition cursor-pointer"
+                                            :class="copied ? 'bg-emerald-100 text-emerald-700 font-semibold' : 'bg-white text-gray-700 hover:bg-gray-100 hover:text-gray-900 border border-gray-200 shadow-2xs'"
+                                            title="Copy invitation link">
+                                        <template x-if="!copied">
+                                            <span class="inline-flex items-center gap-1">
+                                                <svg class="h-3.5 w-3.5 text-gray-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                                                <span class="text-[11px]">Copy</span>
+                                            </span>
+                                        </template>
+                                        <template x-if="copied">
+                                            <span class="inline-flex items-center gap-1 text-emerald-700 font-semibold">
+                                                <svg class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+                                                <span class="text-[11px]">Copied!</span>
+                                            </span>
+                                        </template>
                                     </button>
                                 </div>
                             </td>
 
                             {{-- Actions --}}
                             <td class="px-5 py-3.5 text-right whitespace-nowrap">
-                                <button type="button" onclick="navigator.clipboard.writeText('{{ route('invitation.card', $customer) }}'); window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Invitation link copied for {{ addslashes($customer->name) }}' } }))" class="inline-flex rounded-lg bg-slate-100 p-2 text-slate-600 hover:bg-slate-200 transition" title="Copy invitation link to share with exhibitor"><i data-lucide="share-2" class="h-4 w-4"></i></button>
-                                <a href="{{ route('management.exhibitors.card', $customer) }}" target="_blank" class="ml-2 inline-flex rounded-lg bg-indigo-50 p-2 text-indigo-600 hover:bg-indigo-100 transition" title="View Invitation Card"><i data-lucide="ticket" class="h-4 w-4"></i></a>
-                                <a href="{{ route('management.exhibitors.show', $customer) }}" class="ml-2 inline-flex rounded-lg bg-brand-50 p-2 text-brand-600 hover:bg-brand-100 transition" title="Exhibitor details"><i data-lucide="eye" class="h-4 w-4"></i></a>
+                                <a href="{{ route('management.exhibitors.show', $customer) }}" class="inline-flex rounded-lg bg-brand-50 p-2 text-brand-600 hover:bg-brand-100 transition" title="Exhibitor details"><i data-lucide="eye" class="h-4 w-4"></i></a>
                                 @if(auth('web')->user()?->hasPermissionTo('customers', 'edit') || auth('web')->user()?->hasPermissionTo('exhibitors', 'edit'))<button type="button" wire:click="editCustomer({{ $customer->id }})" class="ml-2 rounded-lg bg-brand-50 p-2 text-brand-600 hover:bg-brand-100" title="Edit exhibitor"><i data-lucide="pencil" class="h-4 w-4"></i></button>@endif
                                 @if(auth('web')->user()?->hasPermissionTo('customers', 'delete') || auth('web')->user()?->hasPermissionTo('exhibitors', 'delete'))<button type="button" wire:click="confirmDelete({{ $customer->id }})" class="ml-2 rounded-lg bg-red-50 p-2 text-red-600 hover:bg-red-100" title="Delete exhibitor"><i data-lucide="trash-2" class="h-4 w-4"></i></button>@endif
                             </td>

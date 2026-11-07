@@ -19,11 +19,11 @@
         </div>
     </div>
     <div class="flex items-center gap-3">
-        <button type="button" onclick="navigator.clipboard.writeText('{{ route('invitation.card', $customer) }}'); window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Invitation link copied to clipboard!' } }))" class="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-xs hover:bg-gray-50 transition">
+        <button type="button" onclick="window.copyToClipboard('{{ $customer->invitation_url }}').then(() => window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Invitation link copied to clipboard!' } })))" class="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-3.5 py-2.5 text-sm font-medium text-gray-700 shadow-xs hover:bg-gray-50 transition cursor-pointer">
             <i data-lucide="share-2" class="h-4 w-4 text-indigo-600"></i>
             <span>Copy Invitation Link</span>
         </button>
-        <a href="{{ route('invitation.card', $customer) }}" target="_blank" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition">
+        <a href="{{ $customer->invitation_url }}" target="_blank" class="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700 transition">
             <i data-lucide="ticket" class="h-4 w-4"></i>
             <span>View Invitation Card</span>
         </a>

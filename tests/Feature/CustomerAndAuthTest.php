@@ -35,12 +35,12 @@ class CustomerAndAuthTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Sign in to your account');
+        $response->assertDontSee('User code');
     }
 
     public function test_user_can_authenticate_and_redirects_to_customers(): void
     {
         $response = $this->post('/login', [
-            'user_code' => 'ADMIN-001',
             'email' => 'admin@example.com',
             'password' => 'password123',
         ]);
@@ -98,7 +98,7 @@ class CustomerAndAuthTest extends TestCase
         $response->assertSee('Exhibitors');
         $response->assertSee('Grand Pavilion Exhibitor');
         $response->assertSee('Links');
-        $response->assertSee('/invitation/'.$exhibitor->id);
+        $response->assertSee('/invitation/'.$exhibitor->id.'/'.$exhibitor->slug);
         $response->assertSee('Copy invitation link');
 
         $showResponse = $this->actingAs($this->admin, 'web')->get(route('management.exhibitors.show', $exhibitor));
@@ -125,13 +125,13 @@ class CustomerAndAuthTest extends TestCase
         $response->assertSee('VIP EXHIBITOR');
         $response->assertSee('timeless-asia-logo-white.png');
         $response->assertSee('Timeless Asia - Gems &amp; Jewelry Exhibition', false);
-        // Verify simplified card: no location, no pass ID, no barcode, no phone/RSVP, no buttons
+        $response->assertSee('Download Card (PNG)');
+        // Verify simplified card: no location, no pass ID, no barcode, no phone/RSVP
         $response->assertDontSee('Hall 4, Booth 88');
         $response->assertDontSee('EXH-');
         $response->assertDontSee('RSVP');
         $response->assertDontSee('0988776655');
-        $response->assertDontSee('Print / Save PDF');
-        $response->assertDontSee('<button', false);
+        $response->assertDontSee('Print / PDF');
         $response->assertDontSee('sidebar-label');
     }
 
@@ -145,19 +145,51 @@ class CustomerAndAuthTest extends TestCase
             'created_by' => $this->admin->id,
         ]);
 
-        $response = $this->get(route('invitation.card', $exhibitor));
+        $response = $this->get($exhibitor->invitation_url);
         $response->assertStatus(200);
         $response->assertSee('Solar Energy Solutions');
         $response->assertSee('OFFICIAL EXHIBITOR');
         $response->assertSee('timeless-asia-logo-white.png');
         $response->assertSee('Timeless Asia - Gems &amp; Jewelry Exhibition', false);
-        // Verify simplified card: no location, no pass ID, no barcode, no phone/RSVP, no buttons
+        $response->assertSee('Download Card (PNG)');
+        // Verify simplified card: no location, no pass ID, no barcode, no phone/RSVP
         $response->assertDontSee('Green Pavilion, Stand 5');
         $response->assertDontSee('EXH-');
         $response->assertDontSee('RSVP');
         $response->assertDontSee('0977665544');
-        $response->assertDontSee('<button', false);
+        $response->assertDontSee('Print / PDF');
         $response->assertDontSee('sidebar-label');
+    }
+
+    public function test_public_user_can_access_invitation_card_with_id_and_username_slug(): void
+    {
+        $exhibitor = PosCustomer::create([
+            'name' => 'Thwin Htoo Han',
+            'phone' => '0912345678',
+            'customer_level' => 3,
+            'created_by' => $this->admin->id,
+        ]);
+
+        $this->assertSame('thwin-htoo-han', $exhibitor->slug);
+        $this->assertStringContainsString('/invitation/'.$exhibitor->id.'/thwin-htoo-han', $exhibitor->invitation_url);
+
+        // Exact slug matches -> 200 OK
+        $response = $this->get('/invitation/'.$exhibitor->id.'/thwin-htoo-han');
+        $response->assertStatus(200);
+        $response->assertSee('Thwin Htoo Han');
+        $response->assertSee('VIP EXHIBITOR');
+
+        // Partial / incorrect slug -> 404 Not Found
+        $partialResponse = $this->get('/invitation/'.$exhibitor->id.'/thwin');
+        $partialResponse->assertStatus(404);
+
+        // Wrong name slug -> 404 Not Found
+        $wrongResponse = $this->get('/invitation/'.$exhibitor->id.'/someone-else');
+        $wrongResponse->assertStatus(404);
+
+        // Missing slug -> 404 Not Found
+        $missingResponse = $this->get('/invitation/'.$exhibitor->id);
+        $missingResponse->assertStatus(404);
     }
 
     public function test_user_can_logout(): void

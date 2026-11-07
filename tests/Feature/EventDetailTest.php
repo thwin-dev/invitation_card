@@ -101,7 +101,7 @@ class EventDetailTest extends TestCase
             'contact_phone' => '0955566677',
         ]);
 
-        $response = $this->get(route('invitation.card', $exhibitor));
+        $response = $this->get($exhibitor->invitation_url);
         $response->assertStatus(200);
         $response->assertSee('Signature Edition');
         $response->assertSee('MARCH 1 - 5 , 2027');

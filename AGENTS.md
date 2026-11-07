@@ -3,6 +3,7 @@
 - Invitation Card management project.
 - Preserved modules: Customer page and Authentication.
 - Do not push code automatically.
+- Do not run the web server (e.g., php artisan serve) automatically.
 
 ## Development Direction
 

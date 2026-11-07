@@ -72,6 +72,37 @@
 </div>
 @livewireScripts
 <script>
+window.copyToClipboard = function(text) {
+    return new Promise((resolve, reject) => {
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(text).then(resolve).catch(() => fallback(text, resolve, reject));
+        } else {
+            fallback(text, resolve, reject);
+        }
+
+        function fallback(str, res, rej) {
+            try {
+                const el = document.createElement('textarea');
+                el.value = str;
+                el.setAttribute('readonly', '');
+                el.style.position = 'fixed';
+                el.style.top = '0';
+                el.style.left = '0';
+                el.style.opacity = '0';
+                document.body.appendChild(el);
+                el.focus();
+                el.select();
+                el.setSelectionRange(0, 99999);
+                const successful = document.execCommand('copy');
+                document.body.removeChild(el);
+                if (successful) res(); else rej(new Error('Copy failed'));
+            } catch (err) {
+                rej(err);
+            }
+        }
+    });
+};
+
 document.addEventListener('livewire:init', () => {
     Livewire.hook('morphed', () => {
         window.lucide?.createIcons();

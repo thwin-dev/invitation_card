@@ -33,7 +33,7 @@ class CustomerLivewireTest extends TestCase
 
     public function test_customer_table_renders(): void
     {
-        PosCustomer::create([
+        $customer = PosCustomer::create([
             'name' => 'Aung Aung',
             'phone' => '09111222333',
             'customer_level' => 1,
@@ -47,8 +47,10 @@ class CustomerLivewireTest extends TestCase
             ->assertSee('Exhibitor')
             ->assertSee('Aung Aung')
             ->assertSee('Links')
-            ->assertSee('/invitation/')
-            ->assertSee('Copy invitation link');
+            ->assertSee('/invitation/'.$customer->id.'/aung-aung')
+            ->assertSee('Copy invitation link')
+            ->assertDontSee('data-lucide="share-2"', false)
+            ->assertDontSee('data-lucide="ticket"', false);
     }
 
     public function test_can_open_create_and_import_modals_via_exhibitor_events(): void

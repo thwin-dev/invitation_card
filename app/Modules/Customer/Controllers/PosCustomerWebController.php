@@ -59,8 +59,12 @@ class PosCustomerWebController extends Controller
         return view('management.customers.show', compact('customer'));
     }
 
-    public function invitationCard(PosCustomer $customer): View
+    public function invitationCard(PosCustomer $customer, ?string $slug = null): View
     {
+        if (request()->routeIs('invitation.card')) {
+            abort_unless($slug !== null && $slug === $customer->slug, 404);
+        }
+
         return view('management.customers.invitation-card', compact('customer'));
     }
 

@@ -19,7 +19,7 @@
 
         @if($sampleCustomer)
             <div class="flex items-center gap-3">
-                <a href="{{ route('invitation.card', $sampleCustomer) }}" target="_blank" class="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 hover:text-gray-900">
+                <a href="{{ $sampleCustomer->invitation_url }}" target="_blank" class="inline-flex items-center gap-2 rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm font-semibold text-gray-700 shadow-sm transition hover:bg-gray-50 hover:text-gray-900">
                     <i data-lucide="external-link" class="h-4 w-4 text-gray-500"></i>
                     <span>Preview Live Card</span>
                 </a>
@@ -179,7 +179,7 @@
                         <p class="text-xs text-gray-400">Current visual design for exhibitors</p>
                     </div>
                     @if($sampleCustomer)
-                        <a href="{{ route('invitation.card', $sampleCustomer) }}" target="_blank" class="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 transition">
+                        <a href="{{ $sampleCustomer->invitation_url }}" target="_blank" class="inline-flex items-center gap-1 rounded-lg bg-blue-50 px-2.5 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-100 transition">
                             <span>Open Card</span>
                             <i data-lucide="arrow-up-right" class="h-3.5 w-3.5"></i>
                         </a>

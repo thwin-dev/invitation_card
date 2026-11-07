@@ -40,4 +40,21 @@ class PosCustomer extends Model
             $this->qr_code_path ? Storage::url($this->qr_code_path) : null
         );
     }
+
+    protected function slug(): Attribute
+    {
+        return Attribute::get(fn (): string =>
+            \Illuminate\Support\Str::slug($this->name) ?: 'invitation'
+        );
+    }
+
+    protected function invitationUrl(): Attribute
+    {
+        return Attribute::get(fn (): string =>
+            route('invitation.card', [
+                'customer' => $this->id,
+                'slug' => $this->slug,
+            ])
+        );
+    }
 }
