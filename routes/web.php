@@ -31,6 +31,7 @@ Route::middleware('auth:web')->group(function (): void {
 
         Route::prefix('management')->name('management.')->group(function (): void {
             require __DIR__.'/modules/customer.php';
+            require __DIR__.'/modules/event.php';
         });
     });
 });

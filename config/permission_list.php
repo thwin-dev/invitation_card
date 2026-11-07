@@ -28,4 +28,15 @@ return [
             'export' => false,
         ],
     ],
+    'events' => [
+        'name' => 'Event Details',
+        'permissions' => [
+            'view' => true,
+            'create' => true,
+            'edit' => true,
+            'delete' => false,
+            'import' => false,
+            'export' => false,
+        ],
+    ],
 ];

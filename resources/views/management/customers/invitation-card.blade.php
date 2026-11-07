@@ -68,6 +68,7 @@
 <body class="min-h-full bg-gradient-to-b from-[#020a1a] via-[#051532] to-[#010610] text-amber-50 flex flex-col justify-center items-center p-3 sm:p-6 lg:p-8 antialiased selection:bg-[#d4a742] selection:text-black">
 
     @php
+        $event = \App\Models\EventDetail::current();
         $tier = (int) $customer->customer_level;
         if ($tier === 3) {
             $tierTitle = 'VIP EXHIBITOR';
@@ -100,25 +101,25 @@
 
                 {{-- Official Exhibition Logo (Enlarged per reference) --}}
                 <div class="mt-2 mb-1 flex flex-col items-center justify-center">
-                    <img src="{{ asset('images/timeless-asia-logo-white.png') }}" 
-                         alt="Timeless Asia - Gems &amp; Jewelry Exhibition" 
+                    <img src="{{ $event->logo_url }}" 
+                         alt="{{ $event->title }} - {{ $event->subtitle }}" 
                          class="h-20 sm:h-24 w-auto max-w-[300px] sm:max-w-[340px] object-contain drop-shadow-[0_4px_18px_rgba(255,255,255,0.22)]">
                     <p class="mt-1 font-cinzel text-xs sm:text-sm font-semibold tracking-[0.3em] text-white/95 uppercase">
-                        4th Edition
+                        {{ $event->edition }}
                     </p>
                 </div>
 
                 {{-- Exhibition Date Badge (from Official Facebook Cover) --}}
                 <div class="mt-3 inline-flex items-center justify-center rounded-full border border-amber-300/40 bg-[#030d22]/70 px-4 py-1.5 backdrop-blur-sm shadow-[0_0_15px_rgba(245,158,11,0.15)]">
                     <span class="font-cinzel text-[11px] sm:text-xs font-bold tracking-[0.24em] text-amber-200 uppercase">
-                        JANUARY 22 - 24 , 2027
+                        {{ $event->date_display }}
                     </span>
                 </div>
 
                 {{-- Official Venue --}}
                 <p class="mt-2 font-montserrat text-[11px] font-medium tracking-wider text-amber-100/85 flex items-center justify-center gap-1.5">
                     <i data-lucide="map-pin" class="h-3 w-3 text-amber-400"></i>
-                    <span>Lotte Hotel Yangon Level 2</span>
+                    <span>{{ $event->venue }}</span>
                 </p>
 
                 {{-- Fine Ornamental Divider --}}
@@ -134,7 +135,7 @@
 
                 {{-- Formal Invitation Honor Text --}}
                 <p class="font-cinzel text-[10px] sm:text-[11px] font-medium tracking-[0.26em] text-amber-200/80 uppercase">
-                    Cordially Requests The Honor Of Your Presence
+                    {{ $event->invitation_text }}
                 </p>
 
                 {{-- Optional Exhibitor Logo Medallion (if uploaded) --}}
@@ -159,13 +160,6 @@
                     </span>
                     <span class="text-amber-300 text-[10px]">✦</span>
                 </div>
-
-                {{-- Optional Contact Phone (RSVP / Inquiries) --}}
-                @if($customer->phone)
-                    <p class="mt-2 font-cormorant text-sm italic tracking-wider text-amber-200/80">
-                        Inquiries &amp; RSVP: <span class="font-montserrat not-italic font-medium text-amber-100 text-xs">{{ $customer->phone }}</span>
-                    </p>
-                @endif
 
                 {{-- Subtle Divider --}}
                 <div class="w-20 h-px bg-gradient-to-r from-transparent via-amber-300/40 to-transparent my-3.5"></div>
@@ -229,7 +223,7 @@
                 {{-- Elegant Footer --}}
                 <div class="mt-4 pt-3 border-t border-amber-300/20 w-full flex flex-col items-center">
                     <p class="font-cinzel text-[9px] tracking-[0.28em] text-amber-300/60 uppercase">
-                        Timeless Asia • 4th Edition 2027
+                        {{ $event->footer_text ?: ($event->title . ' • ' . $event->edition . ' 2027') }}
                     </p>
                 </div>
 

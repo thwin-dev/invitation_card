@@ -45,7 +45,10 @@ class CustomerLivewireTest extends TestCase
         Livewire::test(CustomerTable::class)
             ->assertStatus(200)
             ->assertSee('Exhibitor')
-            ->assertSee('Aung Aung');
+            ->assertSee('Aung Aung')
+            ->assertSee('Links')
+            ->assertSee('/invitation/')
+            ->assertSee('Copy invitation link');
     }
 
     public function test_can_open_create_and_import_modals_via_exhibitor_events(): void

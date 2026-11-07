@@ -13,6 +13,7 @@
                         <th class="px-5 py-3">Phone</th>
                         <th class="px-5 py-3">Level</th>
                         <th class="px-5 py-3 text-center">QR Attachment</th>
+                        <th class="px-5 py-3">Links</th>
                         <th class="px-5 py-3 text-right">Actions</th>
                     </tr>
                 </thead>
@@ -71,6 +72,25 @@
                                 @endif
                             </td>
 
+                            {{-- Links Column with Link and Copy Button --}}
+                            <td class="px-5 py-3.5 whitespace-nowrap">
+                                <div x-data="{ copied: false }" class="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 bg-gray-50/80 px-2.5 py-1 text-xs text-gray-600">
+                                    <a href="{{ route('invitation.card', $customer) }}" target="_blank" class="font-mono text-xs font-medium text-[#465fff] hover:text-[#3649db] hover:underline flex items-center gap-1" title="Open invitation card in new tab">
+                                        <span>/invitation/{{ $customer->id }}</span>
+                                        <i data-lucide="external-link" class="h-3 w-3 text-gray-400"></i>
+                                    </a>
+                                    <button type="button" 
+                                            @click="navigator.clipboard.writeText('{{ route('invitation.card', $customer) }}'); copied = true; setTimeout(() => copied = false, 2000); window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Invitation link copied for {{ addslashes($customer->name) }}' } }))"
+                                            class="ml-1 inline-flex items-center gap-1 rounded-md p-1 transition"
+                                            :class="copied ? 'bg-emerald-50 text-emerald-600' : 'text-gray-400 hover:bg-white hover:text-gray-700 shadow-2xs'"
+                                            :title="copied ? 'Copied to clipboard!' : 'Copy invitation link'">
+                                        <i x-show="!copied" data-lucide="copy" class="h-3.5 w-3.5"></i>
+                                        <i x-show="copied" x-cloak data-lucide="check" class="h-3.5 w-3.5 text-emerald-600"></i>
+                                        <span x-show="copied" x-cloak class="text-[10px] font-semibold text-emerald-600">Copied</span>
+                                    </button>
+                                </div>
+                            </td>
+
                             {{-- Actions --}}
                             <td class="px-5 py-3.5 text-right whitespace-nowrap">
                                 <button type="button" onclick="navigator.clipboard.writeText('{{ route('invitation.card', $customer) }}'); window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Invitation link copied for {{ addslashes($customer->name) }}' } }))" class="inline-flex rounded-lg bg-slate-100 p-2 text-slate-600 hover:bg-slate-200 transition" title="Copy invitation link to share with exhibitor"><i data-lucide="share-2" class="h-4 w-4"></i></button>
@@ -81,7 +101,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr wire:key="exhibitors-empty"><td colspan="6" class="px-5 py-10 text-center text-gray-500">No exhibitors found.</td></tr>
+                        <tr wire:key="exhibitors-empty"><td colspan="7" class="px-5 py-10 text-center text-gray-500">No exhibitors found.</td></tr>
                     @endforelse
                 </tbody>
             </table>

@@ -13,6 +13,7 @@ class EnsureManagementPermission
     private const ROUTE_MODULES = [
         'customers' => 'customers',
         'exhibitors' => 'exhibitors',
+        'events' => 'events',
     ];
 
     public function handle(Request $request, Closure $next): Response

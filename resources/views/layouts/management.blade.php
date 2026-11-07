@@ -25,6 +25,10 @@
         <i data-lucide="users" class="h-4 w-4 shrink-0" title="Exhibitors"></i>
         <span class="sidebar-label">Exhibitors</span>
     </a>
+    <a href="{{ route('management.events.index') }}" class="mb-2 flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium {{ request()->routeIs('management.events.*') ? 'bg-[#eef2ff] text-[#465fff]' : 'text-gray-600 hover:bg-gray-50' }}">
+        <i data-lucide="sparkles" class="h-4 w-4 shrink-0" title="Event Details"></i>
+        <span class="sidebar-label">Event Details</span>
+    </a>
 </nav>
 </aside>
 <div :class="sidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'" class="min-w-0 flex-1 lg:ml-64">

@@ -97,6 +97,9 @@ class CustomerAndAuthTest extends TestCase
         $response->assertStatus(200);
         $response->assertSee('Exhibitors');
         $response->assertSee('Grand Pavilion Exhibitor');
+        $response->assertSee('Links');
+        $response->assertSee('/invitation/'.$exhibitor->id);
+        $response->assertSee('Copy invitation link');
 
         $showResponse = $this->actingAs($this->admin, 'web')->get(route('management.exhibitors.show', $exhibitor));
         $showResponse->assertStatus(200);
@@ -122,9 +125,11 @@ class CustomerAndAuthTest extends TestCase
         $response->assertSee('VIP EXHIBITOR');
         $response->assertSee('timeless-asia-logo-white.png');
         $response->assertSee('Timeless Asia - Gems &amp; Jewelry Exhibition', false);
-        // Verify simplified card: no location, no pass ID, no barcode, no buttons
+        // Verify simplified card: no location, no pass ID, no barcode, no phone/RSVP, no buttons
         $response->assertDontSee('Hall 4, Booth 88');
         $response->assertDontSee('EXH-');
+        $response->assertDontSee('RSVP');
+        $response->assertDontSee('0988776655');
         $response->assertDontSee('Print / Save PDF');
         $response->assertDontSee('<button', false);
         $response->assertDontSee('sidebar-label');
@@ -146,9 +151,11 @@ class CustomerAndAuthTest extends TestCase
         $response->assertSee('OFFICIAL EXHIBITOR');
         $response->assertSee('timeless-asia-logo-white.png');
         $response->assertSee('Timeless Asia - Gems &amp; Jewelry Exhibition', false);
-        // Verify simplified card: no location, no pass ID, no barcode, no buttons
+        // Verify simplified card: no location, no pass ID, no barcode, no phone/RSVP, no buttons
         $response->assertDontSee('Green Pavilion, Stand 5');
         $response->assertDontSee('EXH-');
+        $response->assertDontSee('RSVP');
+        $response->assertDontSee('0977665544');
         $response->assertDontSee('<button', false);
         $response->assertDontSee('sidebar-label');
     }
